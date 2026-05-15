@@ -1,0 +1,28 @@
+<!--
+    Sloppak Converter — Conversion Queue dashboard.
+    Mounted by the plugin loader at <div id="plugin-sloppak_converter" class="screen">.
+
+    All behavior lives in screen.js (always-loaded plugin script).
+    Inline <script> blocks injected via innerHTML are inert per the
+    HTML5 spec, and the core plugin loader's screen.html mount uses
+    innerHTML without re-creating script nodes — so any logic here
+    would never run. Keeping behavior in screen.js avoids that trap.
+-->
+<section class="max-w-5xl mx-auto px-6 pt-24 pb-16">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-white">Conversion Queue</h2>
+            <p id="conv-summary" class="text-sm text-gray-500 mt-1">No jobs yet.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button data-conv-action="toggle-pause" id="conv-pause-btn" class="bg-dark-600 hover:bg-dark-500 px-3 py-2 rounded-lg text-sm text-gray-300 transition">Pause</button>
+            <button data-conv-action="cancel-all" class="bg-dark-600 hover:bg-dark-500 px-3 py-2 rounded-lg text-sm text-gray-300 transition">Cancel all queued</button>
+            <button data-conv-action="retry-failed" class="bg-dark-600 hover:bg-dark-500 px-3 py-2 rounded-lg text-sm text-gray-300 transition">Retry failed</button>
+            <button data-conv-action="clear-finished" class="bg-dark-600 hover:bg-dark-500 px-3 py-2 rounded-lg text-sm text-gray-300 transition">Clear finished</button>
+        </div>
+    </div>
+
+    <div id="conv-filters" class="flex flex-wrap gap-2 mb-4"></div>
+    <div id="conv-table" class="space-y-2"></div>
+    <p id="conv-empty" class="text-sm text-gray-500 mt-8 hidden">Nothing to show in this filter.</p>
+</section>

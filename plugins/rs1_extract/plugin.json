@@ -1,0 +1,10 @@
+{
+  "id": "rs1_extract",
+  "name": "RS1 Song Extractor",
+  "version": "1.0.0",
+  "private": false,
+  "nav": { "label": "RS1 Import", "screen": "rs1-extract" },
+  "screen": "screen.html",
+  "script": "screen.js",
+  "routes": "routes.py"
+}

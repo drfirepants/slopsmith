@@ -1,0 +1,10 @@
+{
+  "id": "profileimport",
+  "name": "Profile Import",
+  "version": "1.0.0",
+  "private": false,
+  "nav": { "label": "Profile Import", "screen": "profileimport" },
+  "screen": "screen.html",
+  "script": "screen.js",
+  "routes": "routes.py"
+}

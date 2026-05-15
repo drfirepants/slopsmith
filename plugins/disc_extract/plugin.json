@@ -1,0 +1,10 @@
+{
+  "id": "disc_extract",
+  "name": "Base Game Song Extractor",
+  "version": "1.0.0",
+  "private": false,
+  "nav": { "label": "Base Game Extract", "screen": "disc-extract" },
+  "screen": "screen.html",
+  "script": "screen.js",
+  "routes": "routes.py"
+}

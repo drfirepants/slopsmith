@@ -1,0 +1,10 @@
+{
+  "id": "sloppak_converter",
+  "name": "Sloppak Converter",
+  "version": "1.0.6",
+  "private": false,
+  "routes": "routes.py",
+  "script": "screen.js",
+  "screen": "queue.html",
+  "nav": { "label": "Conversions", "screen": "plugin-sloppak_converter" }
+}

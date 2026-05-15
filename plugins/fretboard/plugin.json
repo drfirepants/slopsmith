@@ -1,0 +1,7 @@
+{
+  "id": "fretboard",
+  "name": "Fretboard View",
+  "version": "1.0.0",
+  "private": false,
+  "script": "screen.js"
+}

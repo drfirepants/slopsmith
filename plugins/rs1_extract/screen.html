@@ -1,0 +1,17 @@
+<div class="max-w-4xl mx-auto px-6 pt-24 pb-16">
+    <button onclick="showScreen('home')" class="text-gray-500 hover:text-white text-sm mb-6 flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg> Back
+    </button>
+    <h2 class="text-3xl font-bold text-white mb-2">RS1 Song Extractor</h2>
+    <p class="text-gray-500 mb-8">Extract Rocksmith 1 compatibility songs into individual playable CDLCs.</p>
+
+    <div id="rs1-status" class="mb-6"></div>
+    <div id="rs1-packs" class="space-y-6 mb-8"></div>
+    <div id="rs1-progress" class="hidden">
+        <div class="bg-dark-700 border border-gray-800 rounded-xl p-5">
+            <p class="text-sm text-gray-300 mb-3" id="rs1-stage">Starting...</p>
+            <div class="progress-bar mb-2"><div class="fill" id="rs1-bar" style="width:0%"></div></div>
+        </div>
+    </div>
+    <div id="rs1-result" class="hidden"></div>
+</div>

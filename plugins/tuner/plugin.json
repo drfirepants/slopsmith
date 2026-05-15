@@ -1,0 +1,9 @@
+{
+  "id": "tuner",
+  "name": "Guitar/Bass Tuner",
+  "version": "1.1.0",
+  "private": false,
+  "script": "screen.js",
+  "settings": { "html": "settings.html" },
+  "routes": "routes.py"
+}

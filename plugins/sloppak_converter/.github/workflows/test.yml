@@ -1,0 +1,42 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+
+      - name: Checkout Slopsmith host (lib/ needed for routes.py imports)
+        uses: actions/checkout@v4
+        with:
+          repository: byrongamatos/slopsmith
+          ref: 2d7dee65d09e15faf4a3a74e8195f32db93a6283
+          path: slopsmith
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install plugin runtime + test deps
+        working-directory: plugin
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-test.txt
+          # requirements-test.txt includes pycryptodome + pyyaml so the host's
+          # lib/sloppak_convert import chain succeeds without a separate step.
+
+      - name: Run tests
+        working-directory: plugin
+        env:
+          SLOPSMITH_ROOT: ${{ github.workspace }}/slopsmith
+        run: pytest tests/ -v
