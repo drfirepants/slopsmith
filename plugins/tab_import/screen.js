@@ -118,6 +118,7 @@ async function tiBuild() {
     const title = document.getElementById('ti-title').value.trim();
     const artist = document.getElementById('ti-artist').value.trim();
     const album = document.getElementById('ti-album').value.trim();
+    const youtube = document.getElementById('ti-youtube').value.trim();
 
     document.getElementById('ti-parsed').classList.add('hidden');
     document.getElementById('ti-progress').classList.remove('hidden');
@@ -128,6 +129,7 @@ async function tiBuild() {
         title, artist, album,
         tracks: trackIndices.join(','),
         arrangement_names: arrangementNames.join(','),
+        youtube_url: youtube,
     });
 
     const ws = new WebSocket(`ws://${location.host}/ws/plugins/tab_import/build?${params}`);

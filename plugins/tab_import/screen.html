@@ -33,7 +33,12 @@
             <h4 class="text-xs text-gray-400 mb-2">Tracks</h4>
             <div id="ti-tracks" class="space-y-2"></div>
         </div>
-        <button onclick="tiBuild()" class="bg-accent hover:bg-accent-light px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition">Build CDLC</button>
+        <div class="mt-4">
+            <label class="text-xs text-gray-400 mb-1 block">YouTube URL <span class="text-gray-600">(optional — replaces MIDI audio with the real song)</span></label>
+            <input type="text" id="ti-youtube" placeholder="https://www.youtube.com/watch?v=..."
+                class="w-full bg-dark-600 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 outline-none focus:border-accent/50">
+        </div>
+        <button onclick="tiBuild()" class="mt-4 bg-accent hover:bg-accent-light px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition">Build CDLC</button>
     </div>
 
     <!-- Build progress -->

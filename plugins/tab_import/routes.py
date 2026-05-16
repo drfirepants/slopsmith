@@ -14,6 +14,39 @@ _extract_meta = None
 _meta_db = None
 
 
+def _download_youtube_audio(youtube_url: str, out_dir: str, report) -> str:
+    """Download audio from a YouTube URL using yt-dlp. Returns path to OGG file."""
+    import yt_dlp
+
+    out_path = os.path.join(out_dir, "yt_audio")
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "outtmpl": out_path,
+        "postprocessors": [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "vorbis",
+            "preferredquality": "5",
+        }],
+        "quiet": True,
+        "no_warnings": True,
+        "progress_hooks": [lambda d: report(
+            f"Downloading: {d.get('_percent_str', '').strip()}",
+            None,
+        ) if d["status"] == "downloading" else None],
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([youtube_url])
+
+    ogg = out_path + ".ogg"
+    if Path(ogg).exists():
+        return ogg
+    # yt-dlp may use a different extension — find whatever it wrote
+    candidates = list(Path(out_dir).glob("yt_audio.*"))
+    if candidates:
+        return str(candidates[0])
+    raise RuntimeError("yt-dlp did not produce an audio file")
+
+
 def setup(app, context):
     global _get_dlc_dir, _extract_meta, _meta_db
     _get_dlc_dir = context["get_dlc_dir"]
@@ -73,7 +106,7 @@ def setup(app, context):
     @app.websocket("/ws/plugins/tab_import/build")
     async def ws_build_tab(websocket: WebSocket, tmp_path: str, title: str = "",
                            artist: str = "", album: str = "", tracks: str = "",
-                           arrangement_names: str = ""):
+                           arrangement_names: str = "", youtube_url: str = ""):
         """Build CDLC from an uploaded GP file with progress."""
         await websocket.accept()
 
@@ -100,7 +133,10 @@ def setup(app, context):
 
         def _do_build():
             def report(stage, pct):
-                progress_queue.put_nowait({"stage": stage, "progress": pct})
+                msg = {"stage": stage}
+                if pct is not None:
+                    msg["progress"] = pct
+                progress_queue.put_nowait(msg)
 
             try:
                 gp_path = tmp_path
@@ -141,9 +177,21 @@ def setup(app, context):
                 arr_names = [name_map.get(i, "Lead") for i in auto_indices]
                 report(f"Selected {len(auto_indices)} tracks: {', '.join(arr_names)}", 20)
 
-                report("Generating MIDI audio...", 30)
-                midi_out = os.path.join(tempfile.mkdtemp(), "midi")
-                midi_path = gp_to_audio(gp_path, midi_out)
+                # Audio: YouTube download or MIDI fallback
+                use_youtube = bool(youtube_url and youtube_url.strip())
+                if use_youtube:
+                    report("Downloading audio from YouTube...", 25)
+                    yt_dir = tempfile.mkdtemp()
+                    try:
+                        audio_path = _download_youtube_audio(youtube_url.strip(), yt_dir, report)
+                        report("YouTube audio downloaded.", 40)
+                    except Exception as e:
+                        progress_queue.put_nowait({"error": f"YouTube download failed: {e}"})
+                        return
+                else:
+                    report("Generating MIDI audio...", 30)
+                    midi_out = os.path.join(tempfile.mkdtemp(), "midi")
+                    audio_path = gp_to_audio(gp_path, midi_out)
 
                 report("Converting to Rocksmith XML...", 50)
                 xml_dir = tempfile.mkdtemp()
@@ -157,7 +205,9 @@ def setup(app, context):
                 al = album or song.album or ""
                 safe_t = re.sub(r'[<>:"/\\|?*]', '_', t)
                 safe_a = re.sub(r'[<>:"/\\|?*]', '_', a)
-                output = str(dlc / f"{safe_t}_{safe_a}_midi_p.psarc")
+                suffix = "_p" if use_youtube else "_midi_p"
+                output = str(dlc / f"{safe_t}_{safe_a}{suffix}.psarc")
+                song_title = t if use_youtube else f"{t} (MIDI)"
 
                 def on_progress(msg, pct):
                     report(msg, 60 + pct * 0.35)
@@ -166,8 +216,8 @@ def setup(app, context):
                 build_cdlc(
                     xml_paths=xml_files,
                     arrangement_names=arr_names,
-                    audio_path=midi_path,
-                    title=f"{t} (MIDI)",
+                    audio_path=audio_path,
+                    title=song_title,
                     artist=a,
                     album=al,
                     output_path=output,
