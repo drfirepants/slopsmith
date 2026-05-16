@@ -1,0 +1,7 @@
+{
+  "id": "drums_3d",
+  "name": "3D Drum Highway",
+  "version": "1.0.0",
+  "type": "visualization",
+  "script": "screen.js"
+}
