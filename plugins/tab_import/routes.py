@@ -34,29 +34,20 @@ def _download_youtube_audio(youtube_url: str, out_dir: str, report,
                              start_time: str = "", end_time: str = "") -> str:
     """Download audio from a YouTube URL using yt-dlp. Returns path to OGG file."""
     import yt_dlp
-
-    out_path = os.path.join(out_dir, "yt_audio")
-
-    postprocessors = [{
-        "key": "FFmpegExtractAudio",
-        "preferredcodec": "vorbis",
-        "preferredquality": "5",
-    }]
+    import subprocess
 
     start_sec = _parse_timestamp(start_time)
     end_sec = _parse_timestamp(end_time)
-    if start_sec is not None or end_sec is not None:
-        section = {}
-        if start_sec is not None:
-            section["start_time"] = start_sec
-        if end_sec is not None:
-            section["end_time"] = end_sec
-        postprocessors.append({"key": "FFmpegSubclip", **section})
 
+    out_path = os.path.join(out_dir, "yt_audio")
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": out_path,
-        "postprocessors": postprocessors,
+        "postprocessors": [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "vorbis",
+            "preferredquality": "5",
+        }],
         "quiet": True,
         "no_warnings": True,
         "progress_hooks": [lambda d: report(
@@ -67,14 +58,32 @@ def _download_youtube_audio(youtube_url: str, out_dir: str, report,
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])
 
+    # Find the downloaded file
     ogg = out_path + ".ogg"
-    if Path(ogg).exists():
-        return ogg
-    # yt-dlp may use a different extension — find whatever it wrote
-    candidates = list(Path(out_dir).glob("yt_audio.*"))
-    if candidates:
-        return str(candidates[0])
-    raise RuntimeError("yt-dlp did not produce an audio file")
+    if not Path(ogg).exists():
+        candidates = list(Path(out_dir).glob("yt_audio.*"))
+        if not candidates:
+            raise RuntimeError("yt-dlp did not produce an audio file")
+        ogg = str(candidates[0])
+
+    # Trim with ffmpeg if start/end times were specified
+    if start_sec is not None or end_sec is not None:
+        trimmed = os.path.join(out_dir, "yt_audio_trimmed.ogg")
+        cmd = ["ffmpeg", "-y", "-i", ogg]
+        if start_sec is not None:
+            cmd += ["-ss", str(start_sec)]
+        if end_sec is not None:
+            # end_sec is relative to original; adjust for start offset
+            duration = end_sec - (start_sec or 0)
+            cmd += ["-t", str(duration)]
+        cmd += ["-c", "copy", trimmed]
+        result = subprocess.run(cmd, capture_output=True)
+        if result.returncode == 0 and Path(trimmed).exists():
+            os.replace(trimmed, ogg)
+        else:
+            raise RuntimeError(f"ffmpeg trim failed: {result.stderr.decode()[:200]}")
+
+    return ogg
 
 
 def setup(app, context):
