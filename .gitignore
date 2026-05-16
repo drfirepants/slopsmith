@@ -8,6 +8,7 @@ static/art/
 static/audio_*
 plugins/**/__pycache__/
 plugins/**/node_modules/
+plugins/**/wheels/
 node_modules/
 test-results/
 playwright-report/

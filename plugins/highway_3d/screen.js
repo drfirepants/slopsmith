@@ -166,8 +166,8 @@
     const HWY_LANE_STRIPE_ODD_HEX  = 0x3d739e;
     const HWY_LANE_STRIPE_EVEN_HEX = 0x62a5d8;
     /** Lane quad alpha: base + highwayIntensity * scale (readable on dark floor). */
-    const HWY_LANE_STRIPE_OP_BASE = 0.12;
-    const HWY_LANE_STRIPE_OP_INT  = 0.24;
+    const HWY_LANE_STRIPE_OP_BASE = 0.18;
+    const HWY_LANE_STRIPE_OP_INT  = 0.36;
     const TS = 200 * K;
     /** Match `nextNoteByString` onset to this note (float + chart rounding; avoids ghost / glow flicker). */
     const NEXT_ON_STRING_T_EPS = 0.06;
@@ -190,14 +190,14 @@
     /** Extra emissive layered on accent-only body material (`mAccentCore`), after `strGlow * glowMul`. */
     const ACCENT_NOTE_FILL_BOOST = 2.55;
     /** Accent rim draws brighter than normal string-coloured outlines (`mStrHitOutline`). */
-    const ACCENT_RIM_BASE_EMISSIVE = 3.45;
+    const ACCENT_RIM_BASE_EMISSIVE = 5.5;
     /** Outline / core scale bump vs normal gems (accent reads slightly larger). */
     const ACCENT_RIM_XY_SCALE_MUL = 1.09;
     const ACCENT_RIM_Z_SCALE_MUL = 1.06;
     // Soft neon-style outer bloom (AdditiveBlending) — layered shells behind outline/core.
-    const ACCENT_HALO_OP_NEAR = 0.68;
-    const ACCENT_HALO_OP_MID = 0.42;
-    const ACCENT_HALO_OP_FAR = 0.24;
+    const ACCENT_HALO_OP_NEAR = 0.85;
+    const ACCENT_HALO_OP_MID = 0.55;
+    const ACCENT_HALO_OP_FAR = 0.32;
     const ACCENT_HALO_XY_INNER = 1.36;
     const ACCENT_HALO_XY_MID = 1.82;
     const ACCENT_HALO_XY_OUTER = 2.32;
@@ -784,7 +784,7 @@
         return _bgBandsCache;
     }
 
-    const BG_DEFAULTS = { style: 'particles', intensity: 0.5, reactive: true, palette: 'default', showFretOnNote: true, fretNumberGhostScope: 'rocksmith', cameraSmoothing: 0.5, zoomSmoothing: 0.5, tiltSmoothing: 0.5, cameraLockLow: false, cameraLockZoom: 0.5, cameraMode: 'lookahead', nutHeadstockVisible: true, tuningLabelsVisible: true, nutColor: '#f5f3f0', headstockColor: '#d4b48a', textSize: 0.5, vibrancy: 0.85, glow: 0.25, customImageDataUrl: '', customImageName: '', customVideoName: '', chordDiagramSize: 0.5, chordDiagramPosition: 'tl', fretColumnMarkerCadence: 1, projectionVisible: true, inlayLabelsVisible: false, sectionLabelsOnHighway: false, sectionHudVisible: true, sectionHudPosition: 'tr', sectionHudSize: 0.5 };
+    const BG_DEFAULTS = { style: 'particles', intensity: 0.5, reactive: true, palette: 'neon', showFretOnNote: true, fretNumberGhostScope: 'rocksmith', cameraSmoothing: 0.5, zoomSmoothing: 0.5, tiltSmoothing: 0.5, cameraLockLow: false, cameraLockZoom: 0.5, cameraMode: 'lookahead', nutHeadstockVisible: true, tuningLabelsVisible: true, nutColor: '#f5f3f0', headstockColor: '#d4b48a', textSize: 0.5, vibrancy: 1.0, glow: 0.55, customImageDataUrl: '', customImageName: '', customVideoName: '', chordDiagramSize: 0.5, chordDiagramPosition: 'tl', fretColumnMarkerCadence: 1, projectionVisible: true, inlayLabelsVisible: false, sectionLabelsOnHighway: false, sectionHudVisible: true, sectionHudPosition: 'tr', sectionHudSize: 0.5 };
     const BG_STYLE_IDS = ['off', 'particles', 'silhouettes', 'lights', 'geometric', 'image', 'video'];
     const FRET_NUMBER_GHOST_SCOPE_IDS = ['rocksmith', 'all'];
 
@@ -3594,7 +3594,7 @@
 
             // String materials: emissive so they glow when lit
             mStr = activePalette.map(c => new T.MeshStandardMaterial({
-                color: c, emissive: c, emissiveIntensity: 0.002,
+                color: c, emissive: c, emissiveIntensity: 0.12,
                 transparent: true, opacity: 0.4, roughness: 1,
             }));
             mGlow = activePalette.map(c => new T.MeshLambertMaterial({
@@ -3646,7 +3646,7 @@
                 const mat = new T.MeshStandardMaterial({
                     color: activePalette[s],
                     emissive: activePalette[s],
-                    emissiveIntensity: 0.002,
+                    emissiveIntensity: 0.12,
                     transparent: true,
                     opacity: 0.65,
                     roughness: 1,
@@ -4294,11 +4294,11 @@
         function _applyGlow() {
             const g = glowMul;
             for (let s = 0; s < activePalette.length; s++) {
-                if (mStr[s])  mStr[s].emissiveIntensity  = 0.002 * g;
+                if (mStr[s])  mStr[s].emissiveIntensity  = 0.12 * g;
                 // mGlow[s].emissiveIntensity is per-frame in update();
                 // see Phase 4 comment block.
                 const pm = projMeshArr && projMeshArr[s];
-                if (pm && pm.material) pm.material.emissiveIntensity = 0.002 * g;
+                if (pm && pm.material) pm.material.emissiveIntensity = 0.12 * g;
                 if (mStrHitOutline[s]) mStrHitOutline[s].emissiveIntensity = 1.0 * g;
                 if (mAccentOutline[s]) mAccentOutline[s].emissiveIntensity = ACCENT_RIM_BASE_EMISSIVE * g;
                 // mAccentCore[].emissiveIntensity is per-frame in update()
@@ -4472,7 +4472,7 @@
                 // (and per-frame opacity is set by updateStringHighlights via _vibrancyIdleOp)
                 const mat = new T.MeshStandardMaterial({
                     color: activePalette[s], emissive: activePalette[s],
-                    emissiveIntensity: 0.002,
+                    emissiveIntensity: 0.12,
                     transparent: true, opacity: _vibrancyIdleOp, roughness: 1,
                 });
                 const mesh = new T.Mesh(g, mat);
@@ -4687,7 +4687,7 @@
             // still rides on top regardless of vibrancy so play-feedback
             // through the opacity channel survives even at glowMul=0.
             const BASE_GLOW = 0.02 * glowMul;
-            const MAX_GLOW  = 3.5  * glowMul;
+            const MAX_GLOW  = 5.5  * glowMul;
             const IDLE_OP   = _vibrancyIdleOp;
 
             for (let s = 0; s < nStr; s++) {
