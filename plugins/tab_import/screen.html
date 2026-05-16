@@ -38,9 +38,23 @@
             <input type="text" id="ti-youtube" placeholder="https://www.youtube.com/watch?v=..."
                 oninput="tiUpdateYoutubeOptions()"
                 class="w-full bg-dark-600 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 outline-none focus:border-accent/50">
-            <div id="ti-also-midi-wrap" class="hidden mt-2 flex items-center gap-2">
-                <input type="checkbox" id="ti-also-midi" checked class="accent-accent">
-                <label for="ti-also-midi" class="text-xs text-gray-400">Also build MIDI version</label>
+            <div id="ti-yt-options" class="hidden mt-2 space-y-2">
+                <div class="flex items-center gap-3">
+                    <div class="flex-1">
+                        <label class="text-xs text-gray-500 mb-1 block">Start time <span class="text-gray-600">(skip intro — e.g. 0:12 or 12)</span></label>
+                        <input type="text" id="ti-yt-start" placeholder="0:00"
+                            class="w-full bg-dark-600 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-200 outline-none focus:border-accent/50">
+                    </div>
+                    <div class="flex-1">
+                        <label class="text-xs text-gray-500 mb-1 block">End time <span class="text-gray-600">(optional — e.g. 3:45)</span></label>
+                        <input type="text" id="ti-yt-end" placeholder="(full song)"
+                            class="w-full bg-dark-600 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-200 outline-none focus:border-accent/50">
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="ti-also-midi" checked class="accent-accent">
+                    <label for="ti-also-midi" class="text-xs text-gray-400">Also build MIDI version</label>
+                </div>
             </div>
         </div>
         <button onclick="tiBuild()" class="mt-4 bg-accent hover:bg-accent-light px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition">Build CDLC</button>

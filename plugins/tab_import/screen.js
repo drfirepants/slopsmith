@@ -102,7 +102,7 @@ function tiShowParsed(data, filename) {
 
 function tiUpdateYoutubeOptions() {
     const hasUrl = document.getElementById('ti-youtube').value.trim().length > 0;
-    document.getElementById('ti-also-midi-wrap').classList.toggle('hidden', !hasUrl);
+    document.getElementById('ti-yt-options').classList.toggle('hidden', !hasUrl);
 }
 
 async function tiBuild() {
@@ -123,6 +123,8 @@ async function tiBuild() {
     const artist = document.getElementById('ti-artist').value.trim();
     const album = document.getElementById('ti-album').value.trim();
     const youtube = document.getElementById('ti-youtube').value.trim();
+    const ytStart = document.getElementById('ti-yt-start').value.trim();
+    const ytEnd   = document.getElementById('ti-yt-end').value.trim();
     const alsoMidi = youtube && document.getElementById('ti-also-midi').checked;
 
     document.getElementById('ti-parsed').classList.add('hidden');
@@ -130,7 +132,8 @@ async function tiBuild() {
     document.getElementById('ti-result').classList.add('hidden');
 
     const baseParams = { tmp_path: _tiTmpPath, title, artist, album,
-        tracks: trackIndices.join(','), arrangement_names: arrangementNames.join(',') };
+        tracks: trackIndices.join(','), arrangement_names: arrangementNames.join(','),
+        youtube_start: ytStart, youtube_end: ytEnd };
 
     const jobs = [{ ...baseParams, youtube_url: youtube }];
     if (alsoMidi) jobs.push({ ...baseParams, youtube_url: '' });
@@ -203,7 +206,9 @@ function tiReset() {
         <p class="text-gray-600 text-xs">or click to browse</p>`;
     document.getElementById('ti-file-input').value = '';
     document.getElementById('ti-youtube').value = '';
-    document.getElementById('ti-also-midi-wrap').classList.add('hidden');
+    document.getElementById('ti-yt-start').value = '';
+    document.getElementById('ti-yt-end').value = '';
+    document.getElementById('ti-yt-options').classList.add('hidden');
     document.getElementById('ti-parsed').classList.add('hidden');
     document.getElementById('ti-progress').classList.add('hidden');
     document.getElementById('ti-result').classList.add('hidden');

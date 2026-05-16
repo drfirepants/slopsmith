@@ -14,19 +14,49 @@ _extract_meta = None
 _meta_db = None
 
 
-def _download_youtube_audio(youtube_url: str, out_dir: str, report) -> str:
+def _parse_timestamp(ts: str) -> float | None:
+    """Convert 'mm:ss', 'hh:mm:ss', or plain seconds string to float seconds."""
+    if not ts:
+        return None
+    try:
+        parts = ts.strip().split(":")
+        if len(parts) == 1:
+            return float(parts[0])
+        elif len(parts) == 2:
+            return int(parts[0]) * 60 + float(parts[1])
+        else:
+            return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+    except Exception:
+        return None
+
+
+def _download_youtube_audio(youtube_url: str, out_dir: str, report,
+                             start_time: str = "", end_time: str = "") -> str:
     """Download audio from a YouTube URL using yt-dlp. Returns path to OGG file."""
     import yt_dlp
 
     out_path = os.path.join(out_dir, "yt_audio")
+
+    postprocessors = [{
+        "key": "FFmpegExtractAudio",
+        "preferredcodec": "vorbis",
+        "preferredquality": "5",
+    }]
+
+    start_sec = _parse_timestamp(start_time)
+    end_sec = _parse_timestamp(end_time)
+    if start_sec is not None or end_sec is not None:
+        section = {}
+        if start_sec is not None:
+            section["start_time"] = start_sec
+        if end_sec is not None:
+            section["end_time"] = end_sec
+        postprocessors.append({"key": "FFmpegSubclip", **section})
+
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": out_path,
-        "postprocessors": [{
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "vorbis",
-            "preferredquality": "5",
-        }],
+        "postprocessors": postprocessors,
         "quiet": True,
         "no_warnings": True,
         "progress_hooks": [lambda d: report(
@@ -106,7 +136,8 @@ def setup(app, context):
     @app.websocket("/ws/plugins/tab_import/build")
     async def ws_build_tab(websocket: WebSocket, tmp_path: str, title: str = "",
                            artist: str = "", album: str = "", tracks: str = "",
-                           arrangement_names: str = "", youtube_url: str = ""):
+                           arrangement_names: str = "", youtube_url: str = "",
+                           youtube_start: str = "", youtube_end: str = ""):
         """Build CDLC from an uploaded GP file with progress."""
         await websocket.accept()
 
@@ -183,7 +214,9 @@ def setup(app, context):
                     report("Downloading audio from YouTube...", 25)
                     yt_dir = tempfile.mkdtemp()
                     try:
-                        audio_path = _download_youtube_audio(youtube_url.strip(), yt_dir, report)
+                        audio_path = _download_youtube_audio(youtube_url.strip(), yt_dir, report,
+                                                              start_time=youtube_start,
+                                                              end_time=youtube_end)
                         report("YouTube audio downloaded.", 40)
                     except Exception as e:
                         progress_queue.put_nowait({"error": f"YouTube download failed: {e}"})
