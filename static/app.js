@@ -1489,6 +1489,7 @@ function renderGridCards(songs, containerId = 'lib-grid', mode = 'replace') {
                     <div class="flex gap-1">
                         ${editBtn(s)}
                         ${heartBtn(s.filename, s.favorite)}
+                        ${deleteBtn(s.filename)}
                     </div>
                 </div>
                 <div class="flex items-center flex-wrap gap-1.5 mt-3 text-xs">
@@ -1669,6 +1670,7 @@ async function renderTreeInto(containerId, countId, stats, letter, q, favoritesO
                         class="retune-btn px-1.5 py-0.5 bg-gold/10 hover:bg-gold/20 border border-gold/20 rounded text-gold" title="Convert to E Standard">E</button>`;
                 html += editBtn(s);
                 html += heartBtn(s.filename, s.favorite);
+                html += deleteBtn(s.filename);
                 html += `</div></div>`;
             }
             html += `</div></div>`;
@@ -1802,6 +1804,21 @@ function heartBtn(filename, isFav) {
 
 function editBtn(song) {
     return `<button data-edit='${JSON.stringify({f:song.filename,t:song.title||'',a:song.artist||'',al:song.album||'',y:song.year||''}).replace(/'/g,"&#39;")}' class="edit-btn text-gray-600 hover:text-accent-light transition" title="Edit metadata"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>`;
+}
+
+function deleteBtn(filename) {
+    return `<button data-delete="${encodeURIComponent(filename)}" class="delete-btn text-gray-600 hover:text-red-400 transition" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>`;
+}
+
+async function deleteSong(filename, cardEl) {
+    const label = cardEl ? (cardEl.querySelector('h3')?.textContent || filename) : filename;
+    if (!confirm(`Delete "${label}"?\n\nThis permanently removes the file from disk.`)) return;
+    const resp = await fetch(`/api/song/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+    if (!resp.ok) {
+        alert(`Delete failed: ${(await resp.json().catch(() => ({detail: resp.statusText}))).detail}`);
+        return;
+    }
+    cardEl?.closest('[data-play]')?.remove();
 }
 
 async function toggleFavorite(filename) {
@@ -5142,6 +5159,13 @@ document.addEventListener('click', e => {
     if (fav) {
         e.stopPropagation();
         toggleFavorite(decodeURIComponent(fav.dataset.fav));
+        return;
+    }
+    // Delete button
+    const del = e.target.closest('.delete-btn');
+    if (del) {
+        e.stopPropagation();
+        deleteSong(decodeURIComponent(del.dataset.delete), del);
         return;
     }
     // Retune button
