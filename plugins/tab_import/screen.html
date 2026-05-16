@@ -34,9 +34,14 @@
             <div id="ti-tracks" class="space-y-2"></div>
         </div>
         <div class="mt-4">
-            <label class="text-xs text-gray-400 mb-1 block">YouTube URL <span class="text-gray-600">(optional — replaces MIDI audio with the real song)</span></label>
+            <label class="text-xs text-gray-400 mb-1 block">YouTube URL <span class="text-gray-600">(optional — uses real song audio)</span></label>
             <input type="text" id="ti-youtube" placeholder="https://www.youtube.com/watch?v=..."
+                oninput="tiUpdateYoutubeOptions()"
                 class="w-full bg-dark-600 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 outline-none focus:border-accent/50">
+            <div id="ti-also-midi-wrap" class="hidden mt-2 flex items-center gap-2">
+                <input type="checkbox" id="ti-also-midi" checked class="accent-accent">
+                <label for="ti-also-midi" class="text-xs text-gray-400">Also build MIDI version</label>
+            </div>
         </div>
         <button onclick="tiBuild()" class="mt-4 bg-accent hover:bg-accent-light px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition">Build CDLC</button>
     </div>

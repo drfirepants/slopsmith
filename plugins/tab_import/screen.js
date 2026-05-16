@@ -100,10 +100,14 @@ function tiShowParsed(data, filename) {
     }).join('');
 }
 
+function tiUpdateYoutubeOptions() {
+    const hasUrl = document.getElementById('ti-youtube').value.trim().length > 0;
+    document.getElementById('ti-also-midi-wrap').classList.toggle('hidden', !hasUrl);
+}
+
 async function tiBuild() {
     if (!_tiTmpPath) return;
 
-    // Collect selected tracks and their arrangement names
     const checks = document.querySelectorAll('.ti-track-check:checked');
     const trackIndices = [...checks].map(c => c.dataset.track);
     if (trackIndices.length === 0) {
@@ -119,54 +123,74 @@ async function tiBuild() {
     const artist = document.getElementById('ti-artist').value.trim();
     const album = document.getElementById('ti-album').value.trim();
     const youtube = document.getElementById('ti-youtube').value.trim();
+    const alsoMidi = youtube && document.getElementById('ti-also-midi').checked;
 
     document.getElementById('ti-parsed').classList.add('hidden');
     document.getElementById('ti-progress').classList.remove('hidden');
     document.getElementById('ti-result').classList.add('hidden');
 
-    const params = new URLSearchParams({
-        tmp_path: _tiTmpPath,
-        title, artist, album,
-        tracks: trackIndices.join(','),
-        arrangement_names: arrangementNames.join(','),
-        youtube_url: youtube,
-    });
+    const baseParams = { tmp_path: _tiTmpPath, title, artist, album,
+        tracks: trackIndices.join(','), arrangement_names: arrangementNames.join(',') };
 
-    const ws = new WebSocket(`ws://${location.host}/ws/plugins/tab_import/build?${params}`);
-    ws.onmessage = (ev) => {
-        const msg = JSON.parse(ev.data);
-        if (msg.progress !== undefined)
-            document.getElementById('ti-bar').style.width = msg.progress + '%';
-        if (msg.stage)
-            document.getElementById('ti-stage').textContent = msg.stage;
-        if (msg.done) {
+    const jobs = [{ ...baseParams, youtube_url: youtube }];
+    if (alsoMidi) jobs.push({ ...baseParams, youtube_url: '' });
+
+    const built = [];
+    for (let i = 0; i < jobs.length; i++) {
+        const label = jobs.length > 1 ? (i === 0 ? 'YouTube' : 'MIDI') : null;
+        const ok = await tiRunBuild(jobs[i], label, i, jobs.length);
+        if (!ok) return;
+        built.push(ok);
+    }
+
+    document.getElementById('ti-progress').classList.add('hidden');
+    document.getElementById('ti-result').classList.remove('hidden');
+    document.getElementById('ti-result').innerHTML = `
+        <div class="bg-green-900/20 border border-green-800/30 rounded-xl p-5 text-center">
+            <p class="text-green-400 font-semibold mb-2">CDLC Created!</p>
+            ${built.map(b => `<p class="text-sm text-gray-400">${esc(b.filename)}</p>
+            <p class="text-xs text-gray-500 mb-2">Tracks: ${esc(b.tracks)}</p>`).join('')}
+            <button onclick="tiReset()" class="mt-2 px-4 py-2 bg-dark-600 hover:bg-dark-500 rounded-xl text-sm text-gray-300 transition">Import Another</button>
+        </div>`;
+}
+
+function tiRunBuild(params, label, jobIdx, totalJobs) {
+    return new Promise((resolve) => {
+        const progressBase = jobIdx / totalJobs * 100;
+        const progressScale = 1 / totalJobs;
+
+        const ws = new WebSocket(`ws://${location.host}/ws/plugins/tab_import/build?${new URLSearchParams(params)}`);
+        ws.onmessage = (ev) => {
+            const msg = JSON.parse(ev.data);
+            if (msg.progress !== undefined) {
+                const pct = progressBase + msg.progress * progressScale;
+                document.getElementById('ti-bar').style.width = pct + '%';
+            }
+            if (msg.stage) {
+                const prefix = label ? `[${label}] ` : '';
+                document.getElementById('ti-stage').textContent = prefix + msg.stage;
+            }
+            if (msg.done) resolve({ filename: msg.filename, tracks: msg.tracks });
+            if (msg.error) {
+                document.getElementById('ti-progress').classList.add('hidden');
+                document.getElementById('ti-result').classList.remove('hidden');
+                document.getElementById('ti-result').innerHTML = `
+                    <div class="bg-red-900/20 border border-red-800/30 rounded-xl p-5 text-center">
+                        <p class="text-red-400 font-semibold mb-1">Build Failed${label ? ` (${label})` : ''}</p>
+                        <p class="text-sm text-gray-400">${esc(msg.error)}</p>
+                        <button onclick="tiReset()" class="mt-4 px-4 py-2 bg-dark-600 hover:bg-dark-500 rounded-xl text-sm text-gray-300 transition">Try Again</button>
+                    </div>`;
+                resolve(null);
+            }
+        };
+        ws.onerror = () => {
             document.getElementById('ti-progress').classList.add('hidden');
             document.getElementById('ti-result').classList.remove('hidden');
-            document.getElementById('ti-result').innerHTML = `
-                <div class="bg-green-900/20 border border-green-800/30 rounded-xl p-5 text-center">
-                    <p class="text-green-400 font-semibold mb-1">CDLC Created!</p>
-                    <p class="text-sm text-gray-400">${msg.filename}</p>
-                    <p class="text-xs text-gray-500 mt-1">Tracks: ${msg.tracks}</p>
-                    <button onclick="tiReset()" class="mt-4 px-4 py-2 bg-dark-600 hover:bg-dark-500 rounded-xl text-sm text-gray-300 transition">Import Another</button>
-                </div>`;
-        }
-        if (msg.error) {
-            document.getElementById('ti-progress').classList.add('hidden');
-            document.getElementById('ti-result').classList.remove('hidden');
-            document.getElementById('ti-result').innerHTML = `
-                <div class="bg-red-900/20 border border-red-800/30 rounded-xl p-5 text-center">
-                    <p class="text-red-400 font-semibold mb-1">Build Failed</p>
-                    <p class="text-sm text-gray-400">${msg.error}</p>
-                    <button onclick="tiReset()" class="mt-4 px-4 py-2 bg-dark-600 hover:bg-dark-500 rounded-xl text-sm text-gray-300 transition">Try Again</button>
-                </div>`;
-        }
-    };
-    ws.onerror = () => {
-        document.getElementById('ti-progress').classList.add('hidden');
-        document.getElementById('ti-result').classList.remove('hidden');
-        document.getElementById('ti-result').innerHTML = `<p class="text-red-400">Connection lost</p>
-            <button onclick="tiReset()" class="mt-3 text-xs text-gray-500 hover:text-white">Try again</button>`;
-    };
+            document.getElementById('ti-result').innerHTML = `<p class="text-red-400">Connection lost</p>
+                <button onclick="tiReset()" class="mt-3 text-xs text-gray-500 hover:text-white">Try again</button>`;
+            resolve(null);
+        };
+    });
 }
 
 function tiReset() {
@@ -178,6 +202,8 @@ function tiReset() {
         <p class="text-gray-400 text-sm mb-2">Drag and drop a Guitar Pro file here</p>
         <p class="text-gray-600 text-xs">or click to browse</p>`;
     document.getElementById('ti-file-input').value = '';
+    document.getElementById('ti-youtube').value = '';
+    document.getElementById('ti-also-midi-wrap').classList.add('hidden');
     document.getElementById('ti-parsed').classList.add('hidden');
     document.getElementById('ti-progress').classList.add('hidden');
     document.getElementById('ti-result').classList.add('hidden');
